@@ -1,9 +1,45 @@
 const express = require("express");
 const cors = require("cors");
-const { uuid } = require("uuidv4");
+const { uuid, isUuid } = require("uuidv4");
+
+const Colors = require("./utils/Colors");
 
 const app = express();
 
+function logRequest(request, response, next) {
+	const { method, url } = request;
+
+	const logLabel = `[${method}] ${Colors.Reset} ${url}`;
+
+	console.time("Time");
+
+	next();
+
+	const bgColor = {
+		GET: Colors.bg.Cyan,
+		POST: Colors.bg.Green,
+		PUT: Colors.bg.Yellow,
+		DELETE: Colors.bg.Red,
+	};
+
+	console.log(bgColor[method], logLabel);
+	console.timeEnd("Time");
+}
+
+function validateRepositoryId(request, response, next) {
+	const { id } = request.params;
+
+	if (!isUuid(id)) {
+		return response.status(400).json({
+			error: "Invalid repository Id!",
+		});
+	}
+
+	return next();
+}
+
+app.use("/repositories/:id", validateRepositoryId);
+app.use(logRequest);
 app.use(express.json());
 app.use(cors());
 
